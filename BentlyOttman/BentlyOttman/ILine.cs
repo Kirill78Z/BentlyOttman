@@ -6,8 +6,12 @@ using System.Threading.Tasks;
 
 namespace BentlyOttman
 {
-    public static class Main
+    public interface ILine
     {
+        double X1 { get; set; }
+        double Y1 { get; set; }
 
+        double X2 { get; set; }
+        double Y2 { get; set; }
     }
 }
