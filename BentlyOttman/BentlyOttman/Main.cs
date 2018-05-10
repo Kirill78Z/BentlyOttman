@@ -12,7 +12,7 @@ namespace BentlyOttman
             FindIntersections(IEnumerable<ILine> lines)
         {
             //Test commit
-
+            //Test commit 2
 
             return null;
         }
