@@ -11,6 +11,9 @@ namespace BentlyOttman
         public static List<IntersectionPoint>
             FindIntersections(IEnumerable<ILine> lines)
         {
+            //Test commit
+
+
             return null;
         }
     }
