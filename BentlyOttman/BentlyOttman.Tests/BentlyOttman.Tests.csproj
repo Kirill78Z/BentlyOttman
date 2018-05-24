@@ -54,6 +54,7 @@
     <Compile Include="EventQueueTests.cs" />
     <Compile Include="TestInput.cs" />
     <Compile Include="SweepLineTests.cs" />
+    <Compile Include="IntersectionComputeTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

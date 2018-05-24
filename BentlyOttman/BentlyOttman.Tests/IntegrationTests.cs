@@ -5,11 +5,6 @@ using static BentlyOttman.Tests.TestInput;
 
 namespace BentlyOttman.Tests
 {
-    public class TestLine : ILine
-    {
-        public SLEvent Pt1 { get; set; }
-        public SLEvent Pt2 { get; set; }
-    }
 
     [TestClass]
     public class IntegrationTests

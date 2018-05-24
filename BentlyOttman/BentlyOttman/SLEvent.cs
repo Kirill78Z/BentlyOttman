@@ -27,19 +27,29 @@ namespace BentlyOttman
         /// <summary>
         /// Линии, для которых эта точка является крайней левой
         /// </summary>
-        public HashSet<ILine> LeftEndPtLines { get; set; } = new HashSet<ILine>();
+        internal HashSet<ILine> LeftEndPtLines { get; set; } = new HashSet<ILine>();
 
 
         /// <summary>
         /// Линии, для которых эта точка является крайней правой
         /// </summary>
-        public HashSet<ILine> RightEndPtLines { get; set; } = new HashSet<ILine>();
+        internal HashSet<ILine> RightEndPtLines { get; set; } = new HashSet<ILine>();
 
 
         /// <summary>
         /// Список пересекающихся линий если это точка пересечения
         /// </summary>
-        public HashSet<ILine> IntersectingLines { get; set; } = new HashSet<ILine>();
+        internal HashSet<ILine> IntersectingLines { get; set; } = new HashSet<ILine>();
+
+        /// <summary>
+        /// Вертикальные пересекающиеся линии если это точка пересечения
+        /// </summary>
+        internal HashSet<ILine> VerticalIntersectingLines { get; set; } = new HashSet<ILine>();
+
+
+        public IEnumerable<ILine> IntersectionsAtPoint { get
+            { return LeftEndPtLines.Union(RightEndPtLines).Union(IntersectingLines).Union(VerticalIntersectingLines); }
+        }
 
         /// <summary>
         /// Линия, которой пренадлежит крайняя точка

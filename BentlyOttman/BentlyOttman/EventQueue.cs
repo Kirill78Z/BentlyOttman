@@ -15,7 +15,7 @@ namespace BentlyOttman
         /// <summary>
         /// Собственно очередь событий
         /// </summary>
-        private SortedSet<SLEvent> EQ;
+        private SortedSet<SLEvent> EQSortedSet;
 
 
 
@@ -30,14 +30,14 @@ namespace BentlyOttman
         /// </summary>
         /// <param name="e"></param>
         /// <returns></returns>
-        private int GetKey(SLEvent e)
+        internal int GetKey(SLEvent e)
         {
             return (new Tuple<double, double>(e.X, e.Y)).GetHashCode();
         }
 
         public EventQueue()
         {
-            EQ = new SortedSet<SLEvent>();
+            EQSortedSet = new SortedSet<SLEvent>();
             eventDictionary = new Dictionary<int, SLEvent>();
             
         }
@@ -58,7 +58,7 @@ namespace BentlyOttman
                 int vertsComparison = line.Pt1.CompareTo(line.Pt2);
                 if (vertsComparison != 0)//Если линия вырождается в точку, то ее не рассматривать
                 {
-                    SLEvent pt1ActualEvent = AddEventToQueue(line.Pt1);
+                    SLEvent pt1ActualEvent = AddEventToQueueAndGetActual(line.Pt1);
                     if (vertsComparison > 0)
                     {
                         pt1ActualEvent.RightEndPtLines.Add(line);
@@ -68,7 +68,7 @@ namespace BentlyOttman
                         pt1ActualEvent.LeftEndPtLines.Add(line);
                     }
 
-                    SLEvent pt2ActualEvent = AddEventToQueue(line.Pt2);
+                    SLEvent pt2ActualEvent = AddEventToQueueAndGetActual(line.Pt2);
                     if (vertsComparison < 0)
                     {
                         pt2ActualEvent.RightEndPtLines.Add(line);
@@ -92,7 +92,7 @@ namespace BentlyOttman
         /// </summary>
         /// <param name="eventToAdd"></param>
         /// <returns>ссылка на значение содержащееся в очереди</returns>
-        public SLEvent AddEventToQueue(SLEvent eventToAdd)
+        public SLEvent AddEventToQueueAndGetActual(SLEvent eventToAdd)
         {
             SLEvent actualEvent = null;
             int key = GetKey(eventToAdd);
@@ -101,7 +101,7 @@ namespace BentlyOttman
             {
                 actualEvent = eventToAdd;
                 eventDictionary.Add(key, eventToAdd);
-                EQ.Add(eventToAdd);
+                EQSortedSet.Add(eventToAdd);
             }
             return actualEvent;
         }
@@ -112,23 +112,29 @@ namespace BentlyOttman
 
 
 
-        public int Count { get { return EQ.Count; } }
+        public int Count { get { return EQSortedSet.Count; } }
+
+        public void Clear()
+        {
+            EQSortedSet.Clear();
+            eventDictionary.Clear();
+        }
 
         public bool Remove(SLEvent e)
         {
-            bool r1 = EQ.Remove(e);
+            bool r1 = EQSortedSet.Remove(e);
             bool r2 = eventDictionary.Remove(GetKey(e));
             return r1 && r2;
         }
 
         public IEnumerator<SLEvent> GetEnumerator()
         {
-            return EQ.GetEnumerator();
+            return EQSortedSet.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return EQ.GetEnumerator();
+            return EQSortedSet.GetEnumerator();
         }
     }
 }
