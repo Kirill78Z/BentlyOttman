@@ -20,8 +20,8 @@ namespace BentlyOttman.Tests
         {
             Assert.IsTrue(IntersectionCompute.AreIntersecting(testLine6, testLine2));
             Assert.IsTrue(IntersectionCompute.AreIntersecting(testLine9, testLine8));
-            Assert.IsTrue(IntersectionCompute.AreIntersecting(testLine7, testLine5));
-            Assert.IsTrue(IntersectionCompute.AreIntersecting(testLine6, testLine8));
+            Assert.IsTrue(!IntersectionCompute.AreIntersecting(testLine7, testLine5));
+            Assert.IsTrue(!IntersectionCompute.AreIntersecting(testLine6, testLine8));
             Assert.IsTrue(!IntersectionCompute.AreIntersecting(testLine6, testLine9));
             Assert.IsTrue(!IntersectionCompute.AreIntersecting(testLine2, testLine3));
             Assert.IsTrue(!IntersectionCompute.AreIntersecting(testLine4, testLine8));
@@ -41,6 +41,22 @@ namespace BentlyOttman.Tests
             intersectionPt = IntersectionCompute.GetIntersectionPt(testLine9, testLine10);
             Assert.AreEqual(170, intersectionPt.X);
             Assert.AreEqual(46, intersectionPt.Y);
+        }
+
+        [TestMethod]
+        public void GetIntersectionPt1Test()
+        {
+            SLEvent intersectionPt = IntersectionCompute.GetIntersectionPt(testLine10.Pt1.X, testLine2);
+            Assert.AreEqual(170, intersectionPt.X);
+            Assert.AreEqual(60, intersectionPt.Y);
+
+            intersectionPt = IntersectionCompute.GetIntersectionPt(testLine10.Pt1.X, testLine9);
+            Assert.AreEqual(170, intersectionPt.X);
+            Assert.AreEqual(46, intersectionPt.Y);
+
+            intersectionPt = IntersectionCompute.GetIntersectionPt(testLine10.Pt1.X, testLine8);
+            Assert.AreEqual(170, intersectionPt.X);
+            Assert.AreEqual(34.28571429, intersectionPt.Y, 0.00000001);
         }
     }
 }

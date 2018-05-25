@@ -29,6 +29,18 @@ namespace BentlyOttman
         /// <returns></returns>
         public static bool AreIntersecting(ILine line1, ILine line2)
         {
+            //Если линии стыкуются по одному из концов, то данный метод возвращает false
+            //Стыкующиеся линии все равно попадают в output алгоритма
+            if (
+                line1.Pt1.CompareTo(line2.Pt1)==0
+                || line1.Pt2.CompareTo(line2.Pt1) == 0
+                || line1.Pt1.CompareTo(line2.Pt2) == 0
+                || line1.Pt2.CompareTo(line2.Pt2) == 0
+                )
+            {
+                return false;
+            }
+
             int p3IsLeft = Math.Sign(IsLeft(line1, line2.Pt1));
             int p4IsLeft = Math.Sign(IsLeft(line1, line2.Pt2));
             int p1IsLeft = Math.Sign(IsLeft(line2, line1.Pt1));
@@ -74,6 +86,29 @@ namespace BentlyOttman
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Перегрузка для нахождения пересечения с вертикальной линией
+        /// </summary>
+        /// <param name="Y1"></param>
+        /// <param name="Y2"></param>
+        /// <param name="line2"></param>
+        /// <returns></returns>
+        public static SLEvent GetIntersectionPt(double line1X, ILine line2)
+        {
+            //(x - x_1 )/(x_2 - x_1 ) = (y - y_1 )/(y_2 - y_1) - уравнение отрезка
+            double den = line2.Pt2.X - line2.Pt1.X;
+            if (den!=0)
+            {
+                double intersectionY = (line1X - line2.Pt1.X) * (line2.Pt2.Y - line2.Pt1.Y) / den + line2.Pt1.Y;
+                return new SLEvent(line1X, intersectionY);
+            }
+            else
+            {
+                return null;
+            }
+
         }
     }
 }

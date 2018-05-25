@@ -26,36 +26,39 @@ namespace BentlyOttman.Tests
         /// https://stackoverflow.com/questions/12145510/how-to-fail-a-test-that-is-stuck-in-an-infinite-loop
         /// </summary>
         [TestMethod]
-        [Timeout(1000)]
+        //[Timeout(1000)]
         public void TraverseEventQueueTest()
         {
             SL.TraverseEventQueue();
             Assert.IsTrue(SL.EQ.Count == 0);
+            Assert.AreEqual(21, SL.EQ.VisitedEvents.Count);
         }
 
 
         [TestMethod]
         public void AboveBelowComparerTest()
         {
-            SL.IntersectingLines.Clear();
+            SL.SLIntersectingLines.Clear();
             SL.X = 130;
-            SL.IntersectingLines.Add(testLine2);
-            SL.IntersectingLines.Add(testLine4);
-            SL.IntersectingLines.Add(testLine5);
-            SL.IntersectingLines.Add(testLine7);
-            SL.IntersectingLines.Add(testLine9);
+            SL.SLIntersectingLines.Add(testLine2);
+            SL.SLIntersectingLines.Add(testLine3);
+            SL.SLIntersectingLines.Add(testLine4);
+            SL.SLIntersectingLines.Add(testLine5);
+            SL.SLIntersectingLines.Add(testLine7);
+            SL.SLIntersectingLines.Add(testLine8);
+            SL.SLIntersectingLines.Add(testLine9);
 
-            ILine line0 = SL.IntersectingLines.ElementAt(0);
-            ILine line1 = SL.IntersectingLines.ElementAt(1);
-            ILine line2 = SL.IntersectingLines.ElementAt(2);
-            ILine line3 = SL.IntersectingLines.ElementAt(3);
-            ILine line4 = SL.IntersectingLines.ElementAt(4);
+            ILine line0 = SL.SLIntersectingLines.ElementAt(0);
+            ILine line1 = SL.SLIntersectingLines.ElementAt(1);
+            ILine line2 = SL.SLIntersectingLines.ElementAt(2);
+            ILine line3 = SL.SLIntersectingLines.ElementAt(3);
+            ILine line4 = SL.SLIntersectingLines.ElementAt(5);
 
             Assert.AreEqual(testLine5, line0);
             Assert.AreEqual(testLine7, line1);
             Assert.AreEqual(testLine9, line2);
-            Assert.AreEqual(testLine2, line3);
-            Assert.AreEqual(testLine4, line4);
+            Assert.IsTrue( testLine2.Equals( line3)|| testLine3.Equals(line3));
+            Assert.IsTrue(testLine4.Equals(line4)|| testLine8.Equals(line4));
 
         }
 
@@ -63,24 +66,40 @@ namespace BentlyOttman.Tests
 
 
         [TestMethod]
-        public void GetAboveBelowLineTest()
+        public void GetNearestLinesTest()
         {
-            SL.IntersectingLines.Clear();
+            SL.SLIntersectingLines.Clear();
             SL.X = 130;
-            SL.IntersectingLines.Add(testLine2);
-            SL.IntersectingLines.Add(testLine3);
-            SL.IntersectingLines.Add(testLine4);
-            SL.IntersectingLines.Add(testLine5);
-            SL.IntersectingLines.Add(testLine7);
-            SL.IntersectingLines.Add(testLine8);
-            SL.IntersectingLines.Add(testLine9);
+            SL.SLIntersectingLines.Add(testLine2);
+            SL.SLIntersectingLines.Add(testLine3);
+            SL.SLIntersectingLines.Add(testLine4);
+            SL.SLIntersectingLines.Add(testLine5);
+            SL.SLIntersectingLines.Add(testLine7);
+            SL.SLIntersectingLines.Add(testLine8);
+            SL.SLIntersectingLines.Add(testLine9);
 
+            List<ILine> highestLines = new List<ILine>();
+            List<ILine> lowestLines = new List<ILine>();
 
-            ILine aboveLine = SL.GetAboveLine(testLine7);
+            List<ILine> aboveLines = SL.GetNearestLines(new ILine[] { testLine7 }, true);
+            Assert.AreEqual(1, aboveLines.Count);
+            ILine aboveLine = aboveLines.First();
             Assert.AreEqual(testLine9, aboveLine);
 
-            ILine belowLine = SL.GetBelowLine(testLine7);
+            aboveLines = SL.GetNearestLines(new ILine[] { testLine7, testLine9}, true, highestLines);
+            Assert.AreEqual(2, aboveLines.Count);
+            Assert.IsTrue(aboveLines.Contains(testLine2) && aboveLines.Contains(testLine3));
+
+
+
+            List<ILine> belowLines = SL.GetNearestLines(new ILine[] { testLine7 }, false);
+            Assert.AreEqual(1, belowLines.Count);
+            ILine belowLine = belowLines.First();
             Assert.AreEqual(testLine5, belowLine);
+
+
+
+
         }
     }
 }

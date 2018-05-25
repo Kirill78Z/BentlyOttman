@@ -25,6 +25,12 @@ namespace BentlyOttman
         /// Нужен для быстрого поиска события по координатам
         /// </summary>
         private Dictionary<int, SLEvent> eventDictionary;
+
+        /// <summary>
+        /// Уже посещенные события
+        /// </summary>
+        public HashSet<int> VisitedEvents { get; } = new HashSet<int>();
+
         /// <summary>
         /// Получение ключа для словаря
         /// </summary>
