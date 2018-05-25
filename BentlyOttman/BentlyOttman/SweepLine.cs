@@ -10,6 +10,19 @@ using static BentlyOttman.IntersectionCompute;
 
 namespace BentlyOttman
 {
+
+    //Главные проблемы:
+    //  - SortedSet не хранит несколько объектов, для которых Compare возвращает 0.
+    //  Такое возникет в тех случаях, когда пытаемся добавить новую линию,
+    //  а в наборе уже есть линия, которая при данном значении X имеет ту же координату Y.
+    //  Если эти линии не параллельны, то можно дать приращение X и выполнять вставку,
+    //  однако нужно хранить так же и параллельные линии
+    //  - По какой-то причине возникают повторные попадания в одни и те же события.
+    //  Этого не долно быть по логике алгоритма. Нужно разобраться с этим
+
+
+
+
     internal class SweepLine
     {
         /// <summary>
@@ -41,18 +54,11 @@ namespace BentlyOttman
         internal List<SLEvent> TraverseEventQueue()
         {
             output = new List<SLEvent>();
-            EQ.VisitedEvents.Clear();
             while (EQ.Count > 0)
             {
                 SLEvent e = EQ.First();
 
-                int eventKey = EQ.GetKey(e);
-                if (!EQ.VisitedEvents.Contains(eventKey))
-                {
-                    GoToEvent(e);
-                    EQ.VisitedEvents.Add(eventKey);
-                }
-                    
+                GoToEvent(e);
 
                 EQ.Remove(e);
             }
@@ -94,9 +100,7 @@ namespace BentlyOttman
                 List<ILine> belowLines = GetNearestLines(rightEndpointLines, false);
                 foreach (ILine rpl in rightEndpointLines)
                 {
-                    aboveBelowComparer.ComparisonToDelete = true;
                     SLIntersectingLines.Remove(rpl);
-                    aboveBelowComparer.ComparisonToDelete = false;
                 }
 
                 foreach (ILine aboveLine in aboveLines)
@@ -251,24 +255,24 @@ namespace BentlyOttman
             if (borderLines != null)
                 borderLines.Clear();
 
-            bool oneLineFounded = false;
+            bool oneLineFound = false;
             foreach (ILine line in collToIterate)
             {
-                if (!oneLineFounded)
+                if (!oneLineFound)
                 {
-                    Func<ILine, bool> comparisonFunc = inputLine => aboveBelowComparer.Compare1(line, inputLine) > 0;
+                    Func<ILine, bool> comparisonFunc = inputLine => aboveBelowComparer.Compare(line, inputLine) > 0;
                     if (!above)
-                        comparisonFunc = inputLine => aboveBelowComparer.Compare1(line, inputLine) < 0;
+                        comparisonFunc = inputLine => aboveBelowComparer.Compare(line, inputLine) < 0;
 
 
-                    oneLineFounded = inputLines.All(comparisonFunc);
-                    if(oneLineFounded)
+                    oneLineFound = inputLines.All(comparisonFunc);
+                    if (oneLineFound)
                         nearestLines.Add(line);
 
-                    if (!oneLineFounded && borderLines != null)//Если нужно заполнять граничные линии
+                    if (!oneLineFound && borderLines != null)//Если нужно заполнять граничные линии
                     {
                         if (borderLines.Count > 0
-                            && aboveBelowComparer.Compare1(borderLines.Last(), line) != 0)
+                            && aboveBelowComparer.Compare(borderLines.Last(), line) != 0)
                         {
                             borderLines.Clear();//Очистить borderLines если Y не равны
                         }
@@ -277,7 +281,7 @@ namespace BentlyOttman
 
                 }
                 else//Если одна линия удовлетворяющая условию найдена, то нужно проверить следующую на равенство Y
-                if (aboveBelowComparer.Compare1(nearestLines.First(), line) == 0)
+                if (aboveBelowComparer.Compare(nearestLines.First(), line) == 0)
                 {
                     nearestLines.Add(line);
                 }
@@ -370,60 +374,20 @@ namespace BentlyOttman
             /// </summary>
             public HashSet<ILine> IntersectingLinesAtCurrentEvent { get; set; }
 
-            /// <summary>
-            /// В те моменты, когда нужно удалить объект из SortedSet Compare должен возвращать равенство объектов
-            /// для того чтобы удалить конкретный объект
-            /// </summary>
-            public bool ComparisonToDelete { get; set; }
+
+            //bool IgnoreEq
+
+
             public int Compare(ILine line1, ILine line2)
             {
-
-                int yComparison = Compare1(line1,line2);
-
-                //Набор линий, пересекаемых секущей должен хранить линии которые накладываются друг на друга
-                //Для таких линий y1 = y2. Чтобы SortedSet сохранил оба значения нужно возвращать не  ноль, а произвольное значение
-                return yComparison != 0 || ComparisonToDelete ? yComparison : 1;
-            }
-
-            /// <summary>
-            /// Сравнение, которое может показывать равенство объектов
-            /// Не подходит для заполнения SortedSet, так как SortedSet не хранит несколько равных объектов
-            /// </summary>
-            /// <param name="line1"></param>
-            /// <param name="line2"></param>
-            /// <returns></returns>
-            public int Compare1(ILine line1, ILine line2)
-            {
-                int yComparison = 0;
-                if (IntersectingLinesAtCurrentEvent != null
-                    && IntersectingLinesAtCurrentEvent.Contains(line1)
-                    && IntersectingLinesAtCurrentEvent.Contains(line2))
-                {
-                    yComparison = Compare2(line1, line2, true);
-                }
-                else
-                {
-                    yComparison = Compare2(line1, line2);
-
-                    //Если сравнение без приращения X показало равенство, то повторить сравнение с приращением в любом случае
-                    //Необходимо для случаев т-образных пересечений
-                    if (yComparison == 0)
-                    {
-                        yComparison = Compare2(line1, line2, true);
-                    }
-                }
-
-
-                
-                return yComparison;
-            }
-
-
-            public int Compare2(ILine line1, ILine line2, bool incrementX = false)
-            {
                 double currX = sl.X;
-                if (incrementX)
+                if (
+                    IntersectingLinesAtCurrentEvent != null
+                    && IntersectingLinesAtCurrentEvent.Contains(line1)
+                    && IntersectingLinesAtCurrentEvent.Contains(line2)
+                    )
                 {
+                    //Дать приращение X для перерасстановки линий в точке пересечения 
                     currX += 1;
                 }
 

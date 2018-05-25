@@ -31,7 +31,6 @@ namespace BentlyOttman.Tests
         {
             SL.TraverseEventQueue();
             Assert.IsTrue(SL.EQ.Count == 0);
-            Assert.AreEqual(21, SL.EQ.VisitedEvents.Count);
         }
 
 
