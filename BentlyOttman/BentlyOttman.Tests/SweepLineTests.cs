@@ -10,25 +10,16 @@ namespace BentlyOttman.Tests
     public class SweepLineTests
     {
 
-        SweepLine SL;
-
-        public SweepLineTests()
-        {
-
-            List<ILine> lines = TestingColl1;
-
-            SL = new SweepLine(lines);
-        }
-
         /// <summary>
         /// Проверяет обход очереди событий
         /// То что не будет бесконечного цикла
         /// https://stackoverflow.com/questions/12145510/how-to-fail-a-test-that-is-stuck-in-an-infinite-loop
         /// </summary>
         [TestMethod]
-        //[Timeout(1000)]
+        [Timeout(1000)]
         public void TraverseEventQueueTest()
         {
+            SweepLine SL = new SweepLine(TestingColl1);
             SL.TraverseEventQueue();
             Assert.IsTrue(SL.EQ.Count == 0);
         }
@@ -37,7 +28,8 @@ namespace BentlyOttman.Tests
         [TestMethod]
         public void AboveBelowComparerTest()
         {
-            SL.SLIntersectingLines.Clear();
+            SweepLine SL = new SweepLine(TestingColl1);
+
             SL.X = 130;
             SL.SLIntersectingLines.Add(testLine2);
             SL.SLIntersectingLines.Add(testLine3);
@@ -67,7 +59,8 @@ namespace BentlyOttman.Tests
         [TestMethod]
         public void GetNearestLinesTest()
         {
-            SL.SLIntersectingLines.Clear();
+            SweepLine SL = new SweepLine(TestingColl1);
+
             SL.X = 130;
             SL.SLIntersectingLines.Add(testLine2);
             SL.SLIntersectingLines.Add(testLine3);
@@ -88,6 +81,15 @@ namespace BentlyOttman.Tests
             aboveLines = SL.GetNearestLines(new ILine[] { testLine7, testLine9}, true, highestLines);
             Assert.AreEqual(2, aboveLines.Count);
             Assert.IsTrue(aboveLines.Contains(testLine2) && aboveLines.Contains(testLine3));
+            Assert.AreEqual(1, highestLines.Count);
+            Assert.IsTrue(highestLines.Contains(testLine9));
+
+
+            aboveLines = SL.GetNearestLines(new ILine[] { testLine2, testLine3 }, true, highestLines);
+            Assert.AreEqual(2, aboveLines.Count);
+            Assert.IsTrue(aboveLines.Contains(testLine4) && aboveLines.Contains(testLine8));
+            Assert.AreEqual(2, highestLines.Count);
+            Assert.IsTrue(highestLines.Contains(testLine2) && highestLines.Contains(testLine3));
 
 
 
@@ -96,9 +98,75 @@ namespace BentlyOttman.Tests
             ILine belowLine = belowLines.First();
             Assert.AreEqual(testLine5, belowLine);
 
+            belowLines = SL.GetNearestLines(new ILine[] { testLine2, testLine3, testLine4, testLine8 }, false, lowestLines);
+            Assert.AreEqual(1, belowLines.Count);
+            Assert.IsTrue(belowLines.Contains(testLine9));
+            Assert.AreEqual(2, lowestLines.Count);
+            Assert.IsTrue(lowestLines.Contains(testLine2)&& lowestLines.Contains(testLine3));
+
+        }
 
 
+        [TestMethod]
+        public void RightEndpointsProcessingTest()
+        {
+            SweepLine SL = new SweepLine(TestingColl1);
 
+            SL.X = 110;
+            SL.SLIntersectingLines.Add(testLine1);
+            SL.SLIntersectingLines.Add(testLine2);
+            SL.SLIntersectingLines.Add(testLine3);
+            SL.SLIntersectingLines.Add(testLine4);
+            SL.SLIntersectingLines.Add(testLine5);
+            SL.SLIntersectingLines.Add(testLine6);
+
+            SLEvent e = new SLEvent(110, 50);
+            e.LeftEndPtLines.Add(testLine7);
+            e.RightEndPtLines.Add(testLine1);
+            e.IntersectingLines.Add(testLine1);
+            e.IntersectingLines.Add(testLine6);
+
+            HashSet<ILine> intersectingAtCurrEv
+                = new HashSet<ILine>(e.LeftEndPtLines.Concat(e.RightEndPtLines.Concat(e.IntersectingLines)));
+            
+
+            SL.AboveBelowComparer1.IntersectingLinesAtCurrentEvent = intersectingAtCurrEv;
+            SL.RightEndpointsProcessing(e);
+
+            Assert.IsTrue(!SL.SLIntersectingLines.Contains(testLine1));
+
+            SLEvent foundIntersection = SL.EQ.FirstOrDefault(ev => ev.X == 115 && ev.Y == 60);
+            Assert.IsNotNull(foundIntersection);
+        }
+
+
+        [TestMethod]
+        public void LeftEndpointsProcessingTest()
+        {
+            SweepLine SL = new SweepLine(TestingColl1);
+
+            SL.X = 125;
+            SL.SLIntersectingLines.Add(testLine2);
+            SL.SLIntersectingLines.Add(testLine3);
+            SL.SLIntersectingLines.Add(testLine4);
+            SL.SLIntersectingLines.Add(testLine5);
+            SL.SLIntersectingLines.Add(testLine7);
+            SL.SLIntersectingLines.Add(testLine8);
+
+            SLEvent e = new SLEvent(125, 40);
+            e.LeftEndPtLines.Add(testLine9);
+            HashSet<ILine> intersectingAtCurrEv
+                = new HashSet<ILine>(e.LeftEndPtLines.Concat(e.RightEndPtLines.Concat(e.IntersectingLines)));
+            SL.AboveBelowComparer1.IntersectingLinesAtCurrentEvent = intersectingAtCurrEv;
+
+            SL.LeftEndpointsProcessing(e);
+
+            Assert.IsTrue(SL.SLIntersectingLines.Contains(testLine9));
+
+            SLEvent foundIntersection = SL.EQ.FirstOrDefault(ev => ev.X == 125 && ev.Y == 40);
+            Assert.IsNotNull(foundIntersection);
+            Assert.IsTrue(foundIntersection.IntersectingLines.Contains(testLine7) && foundIntersection.IntersectingLines.Contains(testLine9));
+            
         }
     }
 }

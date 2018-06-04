@@ -53,6 +53,11 @@ namespace BentlyOttman.Tests
                 prevEvent = currEvent;
             }
 
+
+            //Количество событий
+            Assert.AreEqual(15,EQ.Count);
+            
+
             //Проверить что данные о линиях привязаны к событиям правильно
             SLEvent pt2RightEndPts = new SLEvent(140, 30);
             pt2RightEndPts = EQ.FirstOrDefault(pt => pt.CompareTo(pt2RightEndPts) == 0);
