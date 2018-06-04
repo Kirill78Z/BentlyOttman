@@ -67,20 +67,19 @@ namespace BentlyOttman
 
         }
 
+
+        //private SortedDictionary<double, List<ILine>> currLinePositions;
+
+
         internal void GoToEvent(SLEvent e)
         {
             this.X = e.X;
             //В одной точке могут быть как конечные точки отрезков, так и их пересечения
-            AboveBelowComparer1.IntersectingLinesAtCurrentEvent
-                = new HashSet<ILine>(e.LeftEndPtLines.Concat(e.RightEndPtLines.Concat(e.IntersectingLines)));
-
 
             RightEndpointsProcessing(e);
             LeftEndpointsProcessing(e);
             IntersectionPointsProcessing(e);
 
-
-            AboveBelowComparer1.IntersectingLinesAtCurrentEvent = null;
             //Условия для добавления события в output:
             //Если общее количество объектов в коллекциях RightEndPtLines и LeftEndPtLines больше 1 (линии стыкуются)
             //или
@@ -103,16 +102,27 @@ namespace BentlyOttman
 
             if (rightEndpointLines.Count > 0)
             {
-                //aboveBelowComparer.IntersectingLinesAtCurrentEvent = rightEndpointLines;
-                AboveBelowComparer1.Increment = -1;
+
                 List<ILine> aboveLines = GetNearestLines(rightEndpointLines, true);
                 List<ILine> belowLines = GetNearestLines(rightEndpointLines, false);
-                //aboveBelowComparer.IntersectingLinesAtCurrentEvent = null;
-                AboveBelowComparer1.Increment = 1;
-                foreach (ILine rpl in rightEndpointLines)
+
+                //foreach (ILine rpl in rightEndpointLines)
+                //{
+                //    //ПОЧЕМУ НЕ РАБОТАЕТ???!!!!!!!!!!!!!!!!!!!!!!!
+                //    SLIntersectingLines.Remove(rpl);
+
+                //}
+
+                List<ILine> toCreateNewSortedSet = new List<ILine>();
+                foreach (ILine line in SLIntersectingLines)
                 {
-                    SLIntersectingLines.Remove(rpl);
+                    if (!rightEndpointLines.Contains(line))
+                    {
+                        toCreateNewSortedSet.Add(line);
+                    }
                 }
+                SLIntersectingLines = new SortedSet<ILine>(toCreateNewSortedSet, AboveBelowComparer1);
+
 
                 foreach (ILine aboveLine in aboveLines)
                 {
@@ -201,16 +211,27 @@ namespace BentlyOttman
             if (e.IntersectingLines.Count > 1)
             {
 
-                //Если линии горизонтальные, то можкт быть несколько highestLine или lowestLine
+                //Убрать линии, пересекающиеся в текущем событии, из набора сканирующей линии
+                foreach (ILine line in e.IntersectingLines)
+                {
+                    SLIntersectingLines.Remove(line);
+                }
+
+
+                //AboveBelowComparer при сравнении между собой линий, которые пересекаются в текущем событии дает приращение по X
+                //Благодаря этому актуализируется их взаимное расположение
+                foreach (ILine line in e.IntersectingLines)
+                {
+                    SLIntersectingLines.Add(line);
+                }
+
+
+                //Если линии горизонтальные, то может быть несколько highestLine или lowestLine
                 //в наборе пересекающихся
-
-                List<ILine> highestLines = null;
-                List<ILine> lowestLines = null;
-                List<ILine> aboveLines = null;
-                List<ILine> belowLines = null;
-
-                UpdateIntersectingLinePositions(out highestLines, out lowestLines,
-                    out aboveLines, out belowLines, e.IntersectingLines);
+                List<ILine> highestLines = new List<ILine>();
+                List<ILine> lowestLines = new List<ILine>();
+                List<ILine> aboveLines = GetNearestLines(e.IntersectingLines, true, highestLines);
+                List<ILine> belowLines = GetNearestLines(e.IntersectingLines, false, lowestLines);
 
                 //ILine aboveLine 
                 //ILine belowLine 
@@ -234,8 +255,6 @@ namespace BentlyOttman
                     }
                 }
 
-                //AddIntersectionEvent(aboveLine, highestLine);
-                //AddIntersectionEvent(belowLine, lowestLine);
 
 
 
@@ -271,17 +290,9 @@ namespace BentlyOttman
             {
                 if (!oneLineFound)
                 {
-                    Func<ILine, bool> comparisonFunc = inputLine => AboveBelowComparer1.CompareByCurrentY(line, inputLine) > 0;
-                    //{
-                    //    int geomComparison = AboveBelowComparer1.CompareByCurrentY(line, inputLine);
-                    //    if (geomComparison==0)
-                    //    {
-                    //        AboveBelowComparer1.IntersectingLinesAtCurrentEvent.Add();
-                    //        geomComparison = AboveBelowComparer1.CompareByCurrentY(line, inputLine);
-                    //    }
-                    //};
+                    Func<ILine, bool> comparisonFunc = inputLine => AboveBelowComparer1.GeometryCompare(line, inputLine) > 0;
                     if (!above)
-                        comparisonFunc = inputLine => AboveBelowComparer1.CompareByCurrentY(line, inputLine) < 0;
+                        comparisonFunc = inputLine => AboveBelowComparer1.GeometryCompare(line, inputLine) < 0;
 
 
                     oneLineFound = inputLines.All(comparisonFunc);
@@ -291,7 +302,7 @@ namespace BentlyOttman
                     if (!oneLineFound && borderLines != null)//Если нужно заполнять граничные линии
                     {
                         if (borderLines.Count > 0
-                            && AboveBelowComparer1.CompareByCurrentY(borderLines.Last(), line) != 0)
+                            && AboveBelowComparer1.GeometryCompare(borderLines.Last(), line) != 0)
                         {
                             borderLines.Clear();//Очистить borderLines если Y не равны
                         }
@@ -300,7 +311,7 @@ namespace BentlyOttman
 
                 }
                 else//Если одна линия удовлетворяющая условию найдена, то нужно проверить следующую на равенство Y
-                if (AboveBelowComparer1.CompareByCurrentY(nearestLines.First(), line) == 0)
+                if (AboveBelowComparer1.GeometryCompare(nearestLines.First(), line) == 0)
                 {
                     nearestLines.Add(line);
                 }
@@ -353,63 +364,16 @@ namespace BentlyOttman
             }
         }
 
-        /// <summary>
-        /// Перестановка линий в наборе сканирующей прямой при проходе через точку их пересечения
-        /// </summary>
-        /// <param name="lines"></param>
-        public void UpdateIntersectingLinePositions(
-            out List<ILine> highestLines, out List<ILine> lowestLines,
-            out List<ILine> aboveLines, out List<ILine> belowLines,
-            HashSet<ILine> lines)
-        {
 
-
-            //Убрать линии, пересекающиеся в текущем событии, из набора сканирующей линии
-            foreach (ILine line in lines)
-            {
-                SLIntersectingLines.Remove(line);
-            }
-
-            
-            //AboveBelowComparer при сравнении между собой линий, которые пересекаются в текущем событии дает приращение по X
-            //Благодаря этому актуализируется их взаимное расположение
-            foreach (ILine line in lines)
-            {
-                SLIntersectingLines.Add(line);
-            }
-            highestLines = new List<ILine>();
-            lowestLines = new List<ILine>();
-            aboveLines = GetNearestLines(lines, true, highestLines);
-            belowLines = GetNearestLines(lines, false, lowestLines);
-            
-        }
-
-
-        //private void AddToSL(ILine line)
-        //{
-        //    aboveBelowComparer.IgnoreEqualityToAddEqualElements = true;
-        //    SLIntersectingLines.Add(line);
-        //    aboveBelowComparer.IgnoreEqualityToAddEqualElements = false;
-        //}
 
 
         internal class AboveBelowComparer : IComparer<ILine>
         {
             private SweepLine sl;
 
-            /// <summary>
-            /// Набор пересекающихся линий. Данный набор заполняется в других методах.
-            /// Для актуализации положения линий при переходе через точку их пересечения
-            /// при сравнении пересекающихся линий между собой давать приращение положению сканирующей линии
-            /// </summary>
-            public HashSet<ILine> IntersectingLinesAtCurrentEvent { get; set; }
-
-            public double Increment { get; set; } = 1;
-
-
             public int Compare(ILine line1, ILine line2)
             {
-                int geometryComparison = CompareByCurrentY(line1, line2);
+                int geometryComparison = GeometryCompare(line1, line2);
 
                 //Если линии параллельны и накладываются друг на друга,
                 //то должна быть возможность добавлять и удалять их в SortedSet независимо друг от друга.
@@ -417,31 +381,36 @@ namespace BentlyOttman
                 return geometryComparison!=0 ? geometryComparison : line1.GetHashCode().CompareTo(line2.GetHashCode());
             }
 
-            public int CompareByCurrentY(ILine line1, ILine line2)
+            public int GeometryCompare(ILine line1, ILine line2)
             {
                 double currX = sl.X;
-                if (
-                    IntersectingLinesAtCurrentEvent != null
-                    && IntersectingLinesAtCurrentEvent.Contains(line1)
-                    && IntersectingLinesAtCurrentEvent.Contains(line2)
-                    )
-                {
-                    //Дать приращение X для перерасстановки линий в точке пересечения 
-                    currX += Increment;
-                }
+
 
                 //Вертикальная линия не должна попадать в набор!!!
                 double den1 = line1.Pt2.X - line1.Pt1.X;
                 double den2 = line2.Pt2.X - line2.Pt1.X;
                 if (den1 != 0 && den2 != 0)
                 {
+                    double y2_y1_1 = (line1.Pt2.Y - line1.Pt1.Y);
+                    double y2_y1_2 = (line2.Pt2.Y - line2.Pt1.Y);
+
                     //координата Y первой линии 
-                    double y1 = (currX - line1.Pt1.X) * (line1.Pt2.Y - line1.Pt1.Y) / den1 + line1.Pt1.Y;
+                    double y1 = (currX - line1.Pt1.X) * y2_y1_1 / den1 + line1.Pt1.Y;
                     //координата Y второй линии 
-                    double y2 = (currX - line2.Pt1.X) * (line2.Pt2.Y - line2.Pt1.Y) / den2 + line2.Pt1.Y;
+                    double y2 = (currX - line2.Pt1.X) * y2_y1_2 / den2 + line2.Pt1.Y;
 
                     //Нужно сравнивать приблизительно из-за погрешности в вычислениях
                     int comparisonResult = Math.Round(y1, 10).CompareTo(Math.Round(y2, 10));
+
+                    //Если координата Y в данной точке одинаковая,
+                    //то сравниваются значения призводных данных линий
+                    if (comparisonResult == 0)
+                    {
+                        double t1 = y2_y1_1 / den1;
+                        double t2 = y2_y1_2 / den2;
+                        comparisonResult = Math.Round(t1, 10).CompareTo(Math.Round(t2, 10));
+                    }
+
 
                     return comparisonResult;
 
